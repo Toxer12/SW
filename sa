@@ -1,0 +1,17 @@
+int main() {
+    
+    TRISA = 0;
+    //TRISD = 1;
+    LATA = 0xFFFF;
+    TRISDbits.TRISD6 = 1;
+    //uint16_t btn = 0;
+    //PORTDbits.RD6 = 0;
+    //uint16_t btn = 0;
+     
+    while(1)    
+    {
+        
+        if(PORTDbits.RD6 != 0)
+        {
+            LATA += 1;
+        }
