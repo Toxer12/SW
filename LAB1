@@ -114,7 +114,22 @@ int main(int argc, char** argv) {
         }
         else if(btn==5)
         {
-            LATA = 5;
+            LATA = 0;
+            int a = 1;
+             __delay32(500000);
+            for(int i = 0; i<89;i++)
+            {
+                LATA=LATA+1;
+                a=a+1;
+                 __delay32(500000);
+                 if(a==10)
+                 {
+                     LATA=LATA-9;
+                     LATA=LATA+16;
+                     a=1;
+                 }
+            }
+              __delay32(500000);
         }
         else if(btn==6)
         {
@@ -149,10 +164,11 @@ int main(int argc, char** argv) {
                 LATA = LATA-a;
                 a=a*2;
             }
-            __delay32(500000);
+            a=a/2;
             LATA = LATA+a;
             a = 1;
-             
+            __delay32(500000);
+            
             for(int i = 0; i<6; i++)
             {
                 
@@ -161,10 +177,11 @@ int main(int argc, char** argv) {
                 LATA = LATA-a;
                 a=a*2;
             }
-            __delay32(500000);
+            a=a/2;
             LATA = LATA+a;
             a = 1;
-             
+            __delay32(500000);
+            
             for(int i = 0; i<5; i++)
             {
                 
@@ -173,10 +190,11 @@ int main(int argc, char** argv) {
                 LATA = LATA-a;
                 a=a*2;
             }
-             __delay32(500000);
-             LATA = LATA+a;
-             a = 1;
-             
+            a=a/2;
+            LATA = LATA+a;
+            a = 1;
+            __delay32(500000);
+            
             for(int i = 0; i<4; i++)
             {
                 
@@ -185,10 +203,11 @@ int main(int argc, char** argv) {
                 LATA = LATA-a;
                 a=a*2;
             }
-             __delay32(500000);
-             LATA = LATA+a;
-             a = 1;
-             
+            a=a/2;
+            LATA = LATA+a;
+            a = 1;
+            __delay32(500000);
+            
             for(int i = 0; i<3; i++)
             {
                 
@@ -197,21 +216,10 @@ int main(int argc, char** argv) {
                 LATA = LATA-a;
                 a=a*2;
             }
-             __delay32(500000);
-             LATA = LATA+a;
-             a = 1;
-             
-            for(int i = 0; i<2; i++)
-            {
-                
-                LATA = LATA+a;
-                __delay32(500000);
-                LATA = LATA-a;
-                a=a*2;
-            }
-             __delay32(500000);
-             LATA = LATA+a;
-             a = 1;
+            a=a/2;
+            LATA = LATA+a;
+            a = 1;
+            __delay32(500000);
             
             for(int i = 0; i<2; i++)
             {
@@ -221,9 +229,14 @@ int main(int argc, char** argv) {
                 LATA = LATA-a;
                 a=a*2;
             }
+            a=a/2;
+            LATA = LATA+a;
+            a = 1;
+            __delay32(500000);
+            
+            LATA=LATA+1;
              __delay32(500000);
-             LATA = LATA+a;
-             a = 1;
+             
         }
         else if(btn==8)
         {
