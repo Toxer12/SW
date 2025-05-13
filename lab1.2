@@ -1,0 +1,330 @@
+/* 
+ * File:   main.c
+ * Author: local
+ *
+ * Created on March 31, 2025, 8:17 AM
+ */
+
+// CONFIG2
+#pragma config POSCMOD = NONE           // Primary Oscillator Select (Primary oscillator disabled)
+#pragma config OSCIOFNC = OFF           // Primary Oscillator Output Function (OSC2/CLKO/RC15 functions as CLKO (FOSC/2))
+#pragma config FCKSM = CSDCMD           // Clock Switching and Monitor (Clock switching and Fail-Safe Clock Monitor are disabled)
+#pragma config FNOSC = FRCDIV           // Oscillator Select (Fast RC Oscillator with Postscaler (FRCDIV))
+#pragma config IESO = ON                // Internal External Switch Over Mode (IESO mode (Two-Speed Start-up) enabled)
+
+// CONFIG1
+#pragma config WDTPS = PS32768          // Watchdog Timer Postscaler (1:32,768)
+#pragma config FWPSA = PR128            // WDT Prescaler (Prescaler ratio of 1:128)
+#pragma config WINDIS = ON              // Watchdog Timer Window (Standard Watchdog Timer enabled,(Windowed-mode is disabled))
+#pragma config FWDTEN = ON              // Watchdog Timer Enable (Watchdog Timer is enabled)
+#pragma config ICS = PGx2               // Comm Channel Select (Emulator/debugger uses EMUC2/EMUD2)
+#pragma config GWRP = OFF               // General Code Segment Write Protect (Writes to program memory are allowed)
+#pragma config GCP = OFF                // General Code Segment Code Protect (Code protection is disabled)
+#pragma config JTAGEN = OFF             // JTAG Port Enable (JTAG port is disabled)
+
+
+#include <xc.h>
+#include <p24FJ128GA010.h>
+#include <libpic30.h>
+
+/*
+ * 
+ */
+
+volatile int btn=0;
+
+void initCN(void) {
+    CNEN1bits.CN15IE = 1;  // RD6
+    CNEN2bits.CN19IE = 1;  // RD13
+    CNPU1bits.CN15PUE = 1; // pull-up dla RD6
+    CNPU2bits.CN19PUE = 1; // pull-up dla RD13
+
+    IFS1bits.CNIF = 0;
+    IEC1bits.CNIE = 1;
+    IPC4bits.CNIP = 5; // priorytet
+}
+
+
+
+void a()
+{
+    LATA = LATA + 1;
+            __delay32(500000);
+            if(LATA == 0xFFFF)
+            {
+                LATA = 0;
+                __delay32(500000);
+            }
+}
+
+void b()
+{
+    LATA = LATA - 1;
+            __delay32(500000);
+            if(LATA == 0)
+            {
+                LATA = 0xFFFF;
+                __delay32(500000);
+            }
+}
+
+void c()
+{
+    LATA = 2;
+}
+
+void d()
+{
+    LATA = 3;
+}
+
+void e()
+{
+    int a = 1;
+    __delay32(500000);
+    while(PORTDbits.RD6==1&&PORTDbits.RD13==1)
+    {   
+        if(a==10)
+        {
+        LATA=LATA-9;
+        LATA=LATA+16;
+        a=1;
+         __delay32(500000);
+        }
+        
+        LATA=LATA+1;
+        a=a+1;
+        __delay32(500000);
+                 
+        if(LATA==152)
+        {
+            a=1;
+            LATA=0;
+            __delay32(500000);
+        }
+    }
+              
+    LATA=0;         
+}
+
+void f()
+{
+    LATA=6;
+}
+
+void g()
+{
+    LATA = LATA*2;
+    __delay32(500000);
+    if(LATA==224)
+    {
+        for(int i = 0; i < 5; i++)
+        {
+        LATA = LATA/2;
+        __delay32(500000);
+        }
+    }
+}
+
+void h()
+{
+            __delay32(500000);
+            for(int i = 0; i<7; i++)
+            {
+                LATA = LATA*2;
+                __delay32(500000);
+            }
+            
+            int a = 1;
+            
+            for(int i = 0; i<7; i++)
+            {
+                
+                LATA = LATA+a;
+                __delay32(500000);
+                LATA = LATA-a;
+                a=a*2;
+            }
+            a=a/2;
+            LATA = LATA+a;
+            a = 1;
+            __delay32(500000);
+            
+            for(int i = 0; i<6; i++)
+            {
+                
+                LATA = LATA+a;
+                __delay32(500000);
+                LATA = LATA-a;
+                a=a*2;
+            }
+            a=a/2;
+            LATA = LATA+a;
+            a = 1;
+            __delay32(500000);
+            
+            for(int i = 0; i<5; i++)
+            {
+                
+                LATA = LATA+a;
+                __delay32(500000);
+                LATA = LATA-a;
+                a=a*2;
+            }
+            a=a/2;
+            LATA = LATA+a;
+            a = 1;
+            __delay32(500000);
+            
+            for(int i = 0; i<4; i++)
+            {
+                
+                LATA = LATA+a;
+                __delay32(500000);
+                LATA = LATA-a;
+                a=a*2;
+            }
+            a=a/2;
+            LATA = LATA+a;
+            a = 1;
+            __delay32(500000);
+            
+            for(int i = 0; i<3; i++)
+            {
+                
+                LATA = LATA+a;
+                __delay32(500000);
+                LATA = LATA-a;
+                a=a*2;
+            }
+            a=a/2;
+            LATA = LATA+a;
+            a = 1;
+            __delay32(500000);
+            
+            for(int i = 0; i<2; i++)
+            {
+                
+                LATA = LATA+a;
+                __delay32(500000);
+                LATA = LATA-a;
+                a=a*2;
+            }
+            a=a/2;
+            LATA = LATA+a;
+            a = 1;
+            __delay32(500000);
+            
+            LATA=LATA+1;
+             __delay32(500000);
+             
+    LATA = 1;
+}
+
+void i()
+{
+    LATA = 8;
+}
+
+void __attribute__((interrupt,no_auto_psv)) _CNInterrupt(void)
+{
+    if(PORTDbits.RD6!=1)
+    {
+        btn += 1;
+        if(btn>8)
+        {
+            btn = 0;
+        }
+        while(PORTDbits.RD6!=1)
+        {
+            
+        }
+    }
+    
+    if(PORTDbits.RD13!=1)
+    {
+        btn -= 1;
+        if(btn<0)
+        {
+            btn = 8;
+        }
+        __delay32(500000);
+        while(PORTDbits.RD13!=1)
+        {
+            
+        }
+    }
+    
+    if(btn==0||btn==2||btn==4)
+    {
+        LATA=0;
+    }
+    else if(btn==1||btn==3)
+    {
+        LATA=255;
+    }
+    else if(btn==5)
+    {
+        LATA=152;
+    }
+    else if(btn==6)
+    {
+        LATA=7;
+    }
+    else if(btn==7)
+    {
+        LATA=1;
+    }
+    
+    IFS1bits.CNIF=0;
+}
+
+int main(int argc, char** argv) {
+
+    TRISA = 0;
+    LATA = 0;
+    TRISDbits.TRISD6 = 1;
+    TRISDbits.TRISD13 = 1;
+    initCN();
+    __builtin_enable_interrupts();
+    
+    while(1)
+    {
+        if(btn==0)
+        {
+            a();
+        }
+        else if(btn==1)
+        {
+            b();
+        }
+        else if(btn==2)
+        {
+            c();
+        }
+        else if(btn==3)
+        {
+            d();
+        }
+        else if(btn==4)
+        {
+            e();
+        }
+        else if(btn==5)
+        {
+            f();
+        }
+        else if(btn==6)
+        {
+            g();
+        }
+        else if(btn==7)
+        {
+            h();
+        }
+        else if(btn==8)
+        {
+            i();
+        }
+    }
+}
