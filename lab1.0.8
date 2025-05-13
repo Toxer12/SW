@@ -1,0 +1,63 @@
+uint8_t binaryToGray(uint8_t num) {
+    return num ^ (num >> 1);
+}
+
+uint8_t grayToBinary(uint8_t gray) {
+    uint8_t binary = 0;
+    for (; gray; gray = gray >> 1)
+        binary ^= gray;
+    return binary;
+}
+
+void program3_grayUp(void) {
+    static uint8_t counter = 0;
+    LATB = binaryToGray(counter);
+    counter++;
+}
+
+void program4_grayDown(void) {
+    static uint8_t counter = 255;
+    LATB = binaryToGray(counter);
+    counter--;
+}
+
+void initCN(void) {
+    CNEN2bits.CN16IE = 1;  // RD6
+    CNEN2bits.CN19IE = 1;  // RD13
+    CNPU2bits.CN16PUE = 1; // pull-up dla RD6
+    CNPU2bits.CN19PUE = 1; // pull-up dla RD13
+
+    IFS1bits.CNIF = 0;
+    IEC1bits.CNIE = 1;
+    IPC4bits.CNIP = 5; // priorytet
+}
+
+volatile uint8_t currentProgram = 1;
+
+void __attribute__((interrupt, auto_psv)) _CNInterrupt(void) {
+    static uint16_t prevPortD = 0xFFFF;
+    uint16_t portD = PORTD;
+
+    if (((prevPortD ^ portD) & (1 << 6)) && !(portD & (1 << 6))) {
+        // RD6 wciśnięty
+        currentProgram++;
+        if (currentProgram > 9) currentProgram = 1;
+    }
+    if (((prevPortD ^ portD) & (1 << 13)) && !(portD & (1 << 13))) {
+        // RD13 wciśnięty
+        if (currentProgram == 1) currentProgram = 9;
+        else currentProgram--;
+    }
+
+    prevPortD = portD;
+    IFS1bits.CNIF = 0; // czyść flagę
+}
+
+while (1) {
+    switch (currentProgram) {
+        case 3: program3_grayUp(); break;
+        case 4: program4_grayDown(); break;
+        // Dodaj inne programy tutaj
+    }
+    __delay_ms(300); // opóźnienie widoczne dla LED
+}
