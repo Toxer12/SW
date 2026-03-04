@@ -59,6 +59,17 @@ void kalkulator(int a, int b, char znak)
 
 	}
 }
+//Zadania
+//zadanie 1.1
+int silnia(int n)
+{
+	int wynik = 1;
+	for(int i = 1; i <= n; i++)
+	{
+		wynik *= i;
+	}
+	return wynik;
+}
 
 int main()
 {
@@ -84,6 +95,10 @@ int main()
     kalkulator(5,2,'+');
     kalkulator(5,2,'-');
     kalkulator(5,8,'-');
+
+    //Zadnia
+    //zad 1.1
+    printf("\n Wynik: %d", silnia(3));
 
     return 0;
 }
