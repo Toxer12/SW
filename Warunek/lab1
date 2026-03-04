@@ -1,0 +1,89 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+float sumowanie(float a, float b)
+{
+	return a+b;
+}
+
+int mnozenie(int a, int b, int c)
+{
+	return a*b*c;
+}
+
+void czy_dodatnia(int liczba)
+{
+	if(liczba>0)
+	{
+		printf("\nliczba jest dodatnia");
+	}
+	else
+	{
+		printf("\nliczba nie jest dodatnia");
+	}
+}
+
+void wyswietlanie_tablicy(int tab[], int size)
+{
+	printf("\n Tablica:");
+	for(int i = 0; i < size; i++)
+	{
+		printf("%d", tab[i]);
+	}
+}
+
+void czytaj_liczby()
+{
+	int liczba, suma = 0;
+	do
+	{
+		printf("\nPodaj liczbe (0 koniec):");
+		scanf("%d", &liczba);
+		suma += liczba;
+	}
+	while(liczba != 0);
+	printf("\nsuma podanych liczb: %d", suma);
+}
+
+void kalkulator(int a, int b, char znak)
+{
+	switch (znak)
+	{
+		case '+':
+		printf("\nwynik z kalkulatora: %d", a+b);
+		break;
+
+		case '-':
+		printf("\nwynik z kalkulatora: %d", a-b);
+		break;
+
+	}
+}
+
+int main()
+{
+    //printf("Hello world!\n");
+
+    int a = 10;
+    float b = 3.14;
+    char c = 'A';
+
+    printf(" %d , %.2f , %c", a,b,c);
+    printf("\nwynik dodawania bez funkcji; %.2f", a + b);
+    printf("\nwynik dodawania z funkcji: %.2f", sumowanie(a,b));
+    printf("\nwynik mnozenia: %d", mnozenie(10,10,10));
+
+    czy_dodatnia(3);
+
+    int tablica[5] = {1, 2, 3, 4, 5};
+
+    wyswietlanie_tablicy(tablica, 5);
+
+    //czytaj_liczby();
+
+    kalkulator(5,2,'+');
+    kalkulator(5,2,'-');
+    kalkulator(5,8,'-');
+
+    return 0;
+}
