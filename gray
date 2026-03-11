@@ -1,0 +1,37 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+int dec_to_gray(int n)
+{
+    return n ^ (n>>1);
+}
+
+int gray_to_dec(int n)
+{
+    
+    return ;
+}
+
+int main()
+{
+    printf("%d\n", dec_to_gray(0));
+    printf("%d\n", dec_to_gray(1));
+    printf("%d\n", dec_to_gray(2));
+    printf("%d\n", dec_to_gray(3));
+    printf("%d\n", dec_to_gray(4));
+    printf("%d\n", dec_to_gray(5));
+    printf("%d\n", dec_to_gray(6));
+    printf("%d\n", dec_to_gray(7));
+
+    printf("\n");
+
+    printf("%d\n", dec_to_gray(0));
+    printf("%d\n", dec_to_gray(1));
+    printf("%d\n", dec_to_gray(3));
+    printf("%d\n", dec_to_gray(2));
+    printf("%d\n", dec_to_gray(6));
+    printf("%d\n", dec_to_gray(7));
+    printf("%d\n", dec_to_gray(5));
+    printf("%d\n", dec_to_gray(4));
+    return 0;
+}
