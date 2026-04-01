@@ -1,0 +1,235 @@
+/*
+* Program dla Microchip Explorer 16/32 Board (PIC24FJ128GA010)
+* Wy?wietla ró?ne efekty na diodach LED pod??czonych do portu A
+* Zmiana trybu: przyciski S3 i S4
+* 
+* 9 programów:
+* 1 - Licznik rosn?cy (0-255)
+* 2 - Licznik malej?cy (255-0)
+* 3 - Kod Graya rosn?cy
+* 4 - Kod Graya malej?cy
+* 5 - Licznik BCD rosn?cy (00-99)
+* 6 - Licznik BCD malej?cy (99-00)
+* 7 - Snake (przesuwaj?ce si? 3 diody)
+* 8 - Wype?nianie rejestru (LEDy zapalaj? si? kolejno)
+* 9 - LFSR (generator liczb pseudolosowych)
+*/
+ 
+#include <xc.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <libpic30.h>
+ 
+// ==================== KONFIGURACJA ZEGARA ====================
+// Dla PIC24FJ128GA010 z kwarcem 8MHz
+_FOSCSEL(FNOSC_PRIPLL);         // Primary oscillator with PLL
+_FOSC(OSCIOFNC_OFF & POSCMD_XT); // XT oscillator
+_FWDT(WDT_OFF);                 // Watchdog wy??czony
+_FPOR(PWRT_ON);                 // Power-up timer w??czony
+ 
+#define SYS_CLOCK       32000000L   // System clock 32MHz (8MHz * 4)
+ 
+// ==================== DEFINE ====================
+#define DELAY_FAST      200000      // Opó?nienie dla szybkich efektów
+#define DELAY_SLOW      400000      // Opó?nienie dla wolniejszych efektów
+#define DEBOUNCE_DELAY  50000       // Opó?nienie dla debouncingu przycisków
+ 
+#define BUTTON_PRESSED  0           // Przycisk aktywny nisko (zwiera do masy)
+ 
+// ==================== FUNKCJE OBS?UGI PRZYCISKÓW ====================
+void BUTTON_Enable(void)
+{
+    // Konfiguracja przycisków S3 (RD6) i S4 (RD13)
+    TRISDbits.TRISD6 = 1;    // RD6 jako wej?cie (S3)
+    TRISDbits.TRISD13 = 1;   // RD13 jako wej?cie (S4)
+    // Wy??cz funkcje analogowe na tych pinach
+    AD1PCFGLbits.PCFG6 = 1;   // RD6 jako cyfrowy
+    AD1PCFGLbits.PCFG13 = 1;  // RD13 jako cyfrowy
+    // W??cz wewn?trzne pull-up (je?li przyciski nie maj? zewn?trznych)
+    CNPUDbits.CNPUD6 = 1;     // Pull-up na RD6
+    CNPUDbits.CNPUD13 = 1;    // Pull-up na RD13
+}
+ 
+bool BUTTON_S3_IsPressed(void)
+{
+    return PORTDbits.RD6 == BUTTON_PRESSED;
+}
+ 
+bool BUTTON_S4_IsPressed(void)
+{
+    return PORTDbits.RD13 == BUTTON_PRESSED;
+}
+ 
+// ==================== FUNKCJE OBS?UGI ADC ====================
+void ADC_Init(void)
+{
+    // Wy??cz ADC przed konfiguracj?
+    AD1CON1bits.ADON = 0;
+    // Konfiguracja dla PIC24
+    AD1CON1bits.FORM = 0;       // Dane w formacie integer
+    AD1CON1bits.SSRC = 0;       // Automatyczne rozpocz?cie konwersji
+    AD1CON1bits.ASAM = 0;       // Automatyczne próbkowanie wy??czone
+    AD1CON2bits.CSCNA = 0;      // Skany wy??czone
+    AD1CON2bits.SMPI = 0;       // Przerwanie po ka?dej konwersji
+    AD1CON3bits.ADCS = 31;      // Czas konwersji
+    AD1CON3bits.SAMC = 16;      // Czas próbkowania
+    // W??cz ADC
+    AD1CON1bits.ADON = 1;
+}
+ 
+void ADC_EnablePotentiometer(void)
+{
+    // Wy??cz funkcj? analogow? dla pinu AN4 (potencjometr)
+    AD1PCFGLbits.PCFG4 = 0;     // AN4 jako analogowy
+}
+ 
+uint16_t ADC_ReadPotentiometer(void)
+{
+    // Ustaw kana? AN4
+    AD1CHSbits.CH0SA = 4;
+    // Rozpocznij próbkowanie
+    AD1CON1bits.SAMP = 1;
+    // Odczekaj na próbkowanie
+    __delay32(100);
+    // Rozpocznij konwersj?
+    AD1CON1bits.SAMP = 0;
+    // Czekaj na zako?czenie konwersji
+    while(!AD1CON1bits.DONE);
+    // Odczytaj wynik
+    return ADC1BUF0;
+}
+ 
+// ==================== G?ÓWNA FUNKCJA PROGRAMU ====================
+int main(void)
+{
+    // ========== INICJALIZACJA ==========
+    // 1. Wy??cz wszystkie funkcje analogowe na porcie A (dla LED)
+    AD1PCFGL = 0xFFFF;          // Wszystkie piny portów jako cyfrowe
+    // 2. Konfiguracja portu A jako wyj?cia dla LED
+    TRISA = 0x0000;             // Wszystkie piny portu A jako wyj?cia
+    LATA = 0x0000;              // Wyzeruj wyj?cia
+    // 3. Konfiguracja portu B (dla potencjometru AN4)
+    AD1PCFGLbits.PCFG4 = 0;     // AN4 jako analogowy
+    // 4. Konfiguracja przycisków
+    BUTTON_Enable();
+    // 5. Inicjalizacja ADC (opcjonalnie)
+    ADC_Init();
+    // ========== ZMIENNE ==========
+    uint8_t program = 1;        // Aktualny program (1-9)
+    uint8_t counter = 0;        // Licznik do programów 1-4
+    uint8_t bcd = 0;            // Licznik BCD do programów 5-6
+    uint8_t snakePos = 0;       // Pozycja w??a w programie 7
+    int8_t snakeDir = 1;        // Kierunek w??a (1 = prawo, -1 = lewo)
+    uint8_t queue = 0;          // Kolejka do programu 8
+    uint8_t lfsr = 0b111001;    // Rejestr LFSR do programu 9
+    // ========== P?TLA G?ÓWNA ==========
+    while(1)
+    {
+        // ----- Obs?uga przycisków z debouncingiem -----
+        // Przycisk S3 - zwi?ksza numer programu
+        if(BUTTON_S3_IsPressed())
+        {
+            __delay32(DEBOUNCE_DELAY);      // Odczekaj na ustabilizowanie
+            if(BUTTON_S3_IsPressed())
+            {
+                // Czekaj a? przycisk zostanie puszczony
+                while(BUTTON_S3_IsPressed());
+                program++;
+                if(program > 9) program = 1;
+                // Krótkie opó?nienie dla stabilizacji
+                __delay32(50000);
+            }
+        }
+        // Przycisk S4 - zmniejsza numer programu
+        if(BUTTON_S4_IsPressed())
+        {
+            __delay32(DEBOUNCE_DELAY);      // Odczekaj na ustabilizowanie
+            if(BUTTON_S4_IsPressed())
+            {
+                // Czekaj a? przycisk zostanie puszczony
+                while(BUTTON_S4_IsPressed());
+                if(program == 1) program = 9;
+                else program--;
+                // Krótkie opó?nienie dla stabilizacji
+                __delay32(50000);
+            }
+        }
+        // ----- Wy?wietlanie odpowiedniego programu -----
+        if(program == 1)
+        {
+            // Program 1: Licznik rosn?cy (0-255)
+            LATA = counter;
+            counter++;
+            __delay32(DELAY_FAST);
+        }
+        else if(program == 2)
+        {
+            // Program 2: Licznik malej?cy (255-0)
+            LATA = counter;
+            counter--;
+            __delay32(DELAY_FAST);
+        }
+        else if(program == 3)
+        {
+            // Program 3: Kod Graya rosn?cy
+            LATA = counter ^ (counter >> 1);
+            counter++;
+            __delay32(DELAY_FAST);
+        }
+        else if(program == 4)
+        {
+            // Program 4: Kod Graya malej?cy
+            LATA = counter ^ (counter >> 1);
+            counter--;
+            __delay32(DELAY_FAST);
+        }
+        else if(program == 5)
+        {
+            // Program 5: Licznik BCD rosn?cy (00-99)
+            uint8_t tens = bcd / 10;
+            uint8_t ones = bcd % 10;
+            LATA = (tens << 4) | ones;
+            bcd = (bcd + 1) % 100;
+            __delay32(DELAY_FAST);
+        }
+        else if(program == 6)
+        {
+            // Program 6: Licznik BCD malej?cy (99-00)
+            uint8_t tens = bcd / 10;
+            uint8_t ones = bcd % 10;
+            LATA = (tens << 4) | ones;
+            if(bcd == 0) bcd = 99;
+            else bcd--;
+            __delay32(DELAY_FAST);
+        }
+        else if(program == 7)
+        {
+            // Program 7: Snake - przesuwaj?ce si? 3 zapalone diody
+            // Maska: 0b00000111 = 3 diody (bity 0-2)
+            LATA = (0b00000111 << snakePos);
+            snakePos += snakeDir;
+            // Zmiana kierunku na ko?cach
+            if(snakePos == 5) snakeDir = -1;    // Pozycja 5 - zawracamy
+            if(snakePos == 0) snakeDir = 1;     // Pozycja 0 - zawracamy
+            __delay32(DELAY_SLOW);
+        }
+        else if(program == 8)
+        {
+            // Program 8: Wype?nianie rejestru (efekt przesuwania)
+            queue = (queue << 1) | 1;
+            LATA = queue;
+            if(queue == 0xFF) queue = 0;
+            __delay32(DELAY_FAST);
+        }
+        else if(program == 9)
+        {
+            // Program 9: LFSR (Linear Feedback Shift Register)
+            // Generuje sekwencj? pseudolosow? 6-bitow?
+            uint8_t bit = ((lfsr >> 5) ^ (lfsr >> 4)) & 1;
+            lfsr = ((lfsr << 1) | bit) & 0x3F;
+            LATA = lfsr;
+            __delay32(DELAY_FAST);
+        }
+    }
+    return 0;
+}
