@@ -30,16 +30,19 @@
 int main(void) 
 {
     
-    unsigned portValue = 0x0001;
+    unsigned portValue = 0x0000;
     char current6 = 0, prev6 = 0, current13 = 0, prev13 = 0;
     
     int value = 1;
+    int num = 0;
+    int num1 = 1;
+    int num2 = 0;
     
     TRISA = 0x0000;
     TRISD = 0xFFFF;
     
     //Zad 7
-    uint8_t snakePos = 0;
+    uint8_t snakePos = 7;
     int8_t snakeDir = 1;
     
     //Zad 8
@@ -72,25 +75,144 @@ int main(void)
                 portValue++;
                 break;
             case 4:
-                LATA = portValue ^ (portValue >> 1);
+                LATA = portValue ^ (portValue >> 255);
                 portValue--;
                 break;
             case 5:
-                LATA = 5;
+                LATA = portValue;
+                portValue += 1;
+                num += 1;
+                if(num==9 && portValue != 153)
+                {
+                    LATA = portValue;
+                    portValue += 7;
+                    num = 0;
+                }
+                else if(portValue == 153)
+                {
+                    LATA = portValue;
+                    portValue = 0;
+                    num = 0;
+                }
+                
                 break;
             case 6:
-                LATA = 6;
+                if(num==9 && portValue != 0)
+                {
+                    LATA = portValue;
+                    portValue -= 7;
+                    num = 0;
+                }
+                else if(portValue == 0)
+                {
+                    LATA = portValue;
+                    portValue = 153;
+                    num = 0;
+                }
+                LATA = portValue;
+                portValue -= 1;
+                num += 1;
                 break;
             case 7:
-                LATA = (0b00000111 << snakePos);
-                snakePos += snakeDir;
-                if(snakePos == 5) snakeDir = -1;    
-                if(snakePos == 0) snakeDir = 1;
+                LATA = snakePos;
+                if(snakeDir == 1 && snakePos != 224)
+                {
+                    snakePos = snakePos*2;
+                }
+                else if(snakePos == 224)
+                {
+                    snakeDir = -1;
+                }
+                
+                if(snakeDir == -1 && snakePos != 7)
+                {
+                    snakePos = snakePos/2;
+                }
+                else if(snakePos == 7)
+                {
+                    snakeDir = 1;
+                }
                 break;
             case 8:
-                queue = (queue << 1) | 1;
-                LATA = queue;
-                if(queue == 0xFF) queue = 0;
+                LATA = portValue;
+                if(portValue == 0 || portValue == 255)
+                {
+                    portValue = 1;
+                }
+                else if(portValue < 128)
+                {
+                    portValue *= 2;
+                }
+                else if(portValue < 192)
+                {
+                    portValue = portValue + (num1-num2);
+                    num2 = num1;
+                    num1 *= 2;
+                    if(num1 == 128)
+                    {
+                        num1 = 1;
+                        num2 = 0;
+                    }
+                }
+                else if(portValue < 224)
+                {
+                    portValue = portValue + (num1-num2);
+                    num2 = num1;
+                    num1 *= 2;
+                    if(num1 == 64)
+                    {
+                        num1 = 1;
+                        num2 = 0;
+                    }
+                }
+                else if(portValue < 240)
+                {
+                    portValue = portValue + (num1-num2);
+                    num2 = num1;
+                    num1 *= 2;
+                    if(num1 == 32)
+                    {
+                        num1 = 1;
+                        num2 = 0;
+                    }
+                }
+                else if(portValue < 248)
+                {
+                    portValue = portValue + (num1-num2);
+                    num2 = num1;
+                    num1 *= 2;
+                    if(num1 == 16)
+                    {
+                        num1 = 1;
+                        num2 = 0;
+                    }
+                }
+                else if(portValue < 252)
+                {
+                    portValue = portValue + (num1-num2);
+                    num2 = num1;
+                    num1 *= 2;
+                    if(num1 == 8)
+                    {
+                        num1 = 1;
+                        num2 = 0;
+                    }
+                }
+                else if(portValue < 254)
+                {
+                    portValue = portValue + (num1-num2);
+                    num2 = num1;
+                    num1 *= 2;
+                    if(num1 == 2)
+                    {
+                        num1 = 1;
+                        num2 = 0;
+                    }
+                }
+                else if(portValue < 255)
+                {
+                    portValue = portValue + (num1-num2);
+                }
                 break;
             case 9:
                 LATA = 9;
@@ -99,28 +221,30 @@ int main(void)
         
         prev6 = PORTDbits.RD6;
         prev13 = PORTDbits.RD13;
-        __delay32(150000);
+        __delay32(1500000);
         current6 = PORTDbits.RD6;
         current13 = PORTDbits.RD13;
         
         if(prev6 == 1 && current6 == 0)
         {
             value++;
-        if(value>9)
-        {
-            value = 1;
-        }
-            portValue = 1;
+            if(value>9)
+            {
+                value = 1;
+            }
+            portValue = 0;
+            num = 0;
         }
         
         if(prev13 == 1 && current13 == 0)
         {
             value--;
-        if(value<1)
-        {
-            value = 9;
-        }
-            portValue = 1;
+            if(value<1)
+            {
+                value = 9;
+            }
+            portValue = 0;
+            num = 0;
         }
         
         
