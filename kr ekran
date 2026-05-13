@@ -1,0 +1,150 @@
+// Bity konfiguracyjne sa zdefiniowane w system.c dostarczonym przez Microchip.
+// Nie definiujemy ich tutaj ponownie - duplikat powoduje blad linkera.
+
+#include <xc.h>
+#include <libpic30.h>
+#include <stdio.h>
+#include <string.h>
+#include "lcd.h"
+#include "buttons.h"
+
+// Definicje trybów gry
+#define MODE_5_0  0
+#define MODE_5_3  1
+#define MODE_10_0 2
+#define MODE_COUNT 3
+
+int main(void) {
+
+    char buffer[32];
+
+    // Wszystkie piny jako cyfrowe I/O - jak w guziczki.pdf
+    AD1PCFG = 0xFFFF;
+
+    LCD_Initialize();
+
+    unsigned int  time1        = 300;
+    unsigned int  time2        = 300;
+    unsigned char increment    = 0;
+    
+    unsigned char currentMode  = MODE_5_0;
+    unsigned char activePlayer = 0; // 0 = czeka na start/menu, 1 = odlicza G1, 2 = odlicza G2
+    unsigned char gameOver     = 0;
+    unsigned char tickCount    = 0;
+
+    while (1) {
+
+        // --- Obsluga przyciskow ---
+        if (BUTTON_IsPressed(BUTTON_S3) == true) {
+            
+            if (!gameOver) {
+                if (activePlayer == 0) {
+                    // Start gry - aktywacja zegara gracza 1
+                    activePlayer = 1;
+                    tickCount    = 0;
+                } else if (activePlayer == 1) {
+                    // Gracz 1 konczy ruch -> dodaj inkrementacje i odliczaj G2
+                    time1 += increment;
+                    activePlayer = 2;
+                    tickCount    = 0;
+                }
+            }
+            __delay32(800000); // debounce ~200ms
+
+        } else if (BUTTON_IsPressed(BUTTON_S4) == true) {
+            
+            if (activePlayer == 0) {
+                // Wybor trybu przed startem gry
+                currentMode++;
+                if (currentMode >= MODE_COUNT) currentMode = 0;
+                
+                // Aktualizacja czasów w zaleznosci od wybranego trybu
+                if (currentMode == MODE_5_0) {
+                    time1 = 300; time2 = 300; increment = 0;
+                } else if (currentMode == MODE_5_3) {
+                    time1 = 300; time2 = 300; increment = 3;
+                } else if (currentMode == MODE_10_0) {
+                    time1 = 600; time2 = 600; increment = 0;
+                }
+            } else if (!gameOver && activePlayer == 2) {
+                // Gracz 2 konczy ruch -> dodaj inkrementacje i odliczaj G1
+                time2 += increment;
+                activePlayer = 1;
+                tickCount    = 0;
+            }
+            __delay32(800000); // debounce ~200ms
+
+        } else if (BUTTON_IsPressed(BUTTON_S5) == true) {
+            
+            // S5: RESET - wraca do stanu poczatkowego dla aktualnego trybu
+            activePlayer = 0;
+            gameOver     = 0;
+            tickCount    = 0;
+            
+            if (currentMode == MODE_5_0) {
+                time1 = 300; time2 = 300; increment = 0;
+            } else if (currentMode == MODE_5_3) {
+                time1 = 300; time2 = 300; increment = 3;
+            } else if (currentMode == MODE_10_0) {
+                time1 = 600; time2 = 600; increment = 0;
+            }
+            __delay32(800000); // debounce ~200ms
+        }
+
+        // --- Odliczanie czasu aktywnego gracza ---
+        if (!gameOver && activePlayer != 0) {
+            tickCount++;
+            if (tickCount >= 10) {  // 10 * 100ms = 1 sekunda
+                tickCount = 0;
+                if (activePlayer == 1) {
+                    if (time1 > 0) time1--;
+                    if (time1 == 0) gameOver = 1;
+                } else {
+                    if (time2 > 0) time2--;
+                    if (time2 == 0) gameOver = 1;
+                }
+            }
+        }
+
+        // --- Wyswietlanie na LCD ---
+        LCD_ClearScreen();
+
+        if (gameOver) {
+            if (time1 == 0) {
+                sprintf(buffer, "Gracz 1 przegralprzez czas!     ");
+            } else {
+                sprintf(buffer, "Gracz 2 przegralprzez czas!     ");
+            }
+            LCD_PutString(buffer, 32);
+
+        } else if (activePlayer == 0) {
+            // Ekran wyboru trybu
+            if (currentMode == MODE_5_0) {
+                sprintf(buffer, "Tryb: 5+0       S4:Zmien S3:Graj");
+            } else if (currentMode == MODE_5_3) {
+                sprintf(buffer, "Tryb: 5+3       S4:Zmien S3:Graj");
+            } else if (currentMode == MODE_10_0) {
+                sprintf(buffer, "Tryb: 10+0      S4:Zmien S3:Graj");
+            }
+            LCD_PutString(buffer, 32);
+
+        } else {
+            unsigned char m1 = (unsigned char)(time1 / 60);
+            unsigned char s1 = (unsigned char)(time1 % 60);
+            unsigned char m2 = (unsigned char)(time2 / 60);
+            unsigned char s2 = (unsigned char)(time2 % 60);
+
+            // '>' wskazuje gracza ktorego czas aktualnie odlicza
+            char mark1 = (activePlayer == 1) ? '>' : ' ';
+            char mark2 = (activePlayer == 2) ? '>' : ' ';
+
+            sprintf(buffer, "%cG1: %02u:%02u      %cG2: %02u:%02u      ",
+                    mark1, m1, s1, mark2, m2, s2);
+            LCD_PutString(buffer, 32);
+        }
+
+        __delay32(400000); // tik ~100ms
+    }
+
+    return 0;
+}
