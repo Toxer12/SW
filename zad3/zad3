@@ -57,7 +57,6 @@ int main(void)
         }
         
         prev6 = PORTDbits.RD6;
-        prev13 = PORTDbits.RD13;
         
         if(adc_value > 512 && value < 5)
         {
@@ -82,7 +81,6 @@ int main(void)
         __delay32(100000);
 
         current6 = PORTDbits.RD6;
-        current13 = PORTDbits.RD13;
         
         if(prev6 == 1 && current6 == 0)
         {
